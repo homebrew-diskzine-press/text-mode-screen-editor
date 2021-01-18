@@ -4,10 +4,20 @@
     <meta charset="utf-8">
     <title>Text Mode Screen Editor</title>
     <style>
+      #open-file, #save-file {
+        position: absolute;
+        left: -1000px;
+      }
     </style>
   </head>
   <body>
     <h1>Text Mode Screen Editor</h1>
+    <div>
+      <button id="save-button">Save</button>
+      <button id="load-button">Load</button>
+      <input type="file" id="open-file" accept=".dat">
+      <a href="#" id="save-file" download="text-mode-screen.dat"></a>
+    </div>
     <canvas id="edit-pane"></canvas>
     <script>
 
@@ -28,6 +38,38 @@
       for (let o = 0; o <= rawData.length; o += 2) {
         rawData[o] = 0xf;
       }
+
+      const saveFileLink = document.getElementById('save-file');
+      const openFileInput = document.getElementById('open-file');
+
+      openFileInput.onchange = e => {
+        const file = openFileInput.files[0];
+        if (file) {
+          if (file.size !== rawData.length) {
+            alert('Selected file has invalid size (' + file.size + ' bytes)');
+          }
+          else {
+            const fr = new FileReader();
+            fr.onload = e => {
+              rawData.set(new Uint8Array(fr.result));
+              window.dispatchEvent(new Event('data-update'));
+            };
+            fr.readAsArrayBuffer(file);
+          }
+        }
+        openFileInput.value = '';
+      };
+
+      document.getElementById('save-button').onclick = () => {
+        const url = URL.createObjectURL(new Blob([rawData]));
+        saveFileLink.href = url;
+        saveFileLink.click();
+        setTimeout(() => URL.revokeObjectURL(url), 5000);
+      };
+
+      document.getElementById('load-button').onclick = () => {
+        openFileInput.click();
+      };
 
       const gotCharsImage = new Promise((resolve, reject) => {
         const charsImage = new Image();
@@ -72,6 +114,13 @@
           ctx.globalCompositeOperation = 'destination-over';
           ctx.fillRect(x * charWidth, y * charHeight, charWidth, charHeight);
         };
+        const drawAll = () => {
+          for (let y = 0; y < screenRows; y++) {
+            for (let x = 0; x < screenColumns; x++) {
+              drawAt(x, y);
+            }
+          }
+        };
         for (let y = 0; y < screenRows; y++) {
           for (let x = 0; x < screenColumns; x++) {
             setCharCode(x, y, Math.random() * 0xff);
@@ -79,6 +128,9 @@
             drawAt(x, y);
           }
         }
+        window.addEventListener('data-update', () => {
+          drawAll();
+        });
       });
 
     </script>
