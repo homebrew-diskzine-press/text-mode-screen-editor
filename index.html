@@ -7,6 +7,80 @@
     </style>
   </head>
   <body>
+    <h1>Text Mode Screen Editor</h1>
+    <canvas id="edit-pane"></canvas>
+    <script>
 
+      const palette = [
+        '#000', '#00a', '#0a0', '#0aa',
+        '#a00', '#a0a', '#a50', '#aaa',
+        '#555', '#55f', '#5f5', '#5ff',
+        '#f55', '#f5f', '#ff5', '#fff',
+      ];
+
+      const charWidth = 8;
+      const charHeight = 16;
+
+      let screenColumns = 80;
+      let screenRows = 25;
+
+      const rawData = new Uint8Array(screenColumns * screenRows * 2);
+      for (let o = 0; o <= rawData.length; o += 2) {
+        rawData[o] = 0xf;
+      }
+
+      const gotCharsImage = new Promise((resolve, reject) => {
+        const charsImage = new Image();
+        charsImage.onload = () => {
+          resolve(charsImage);
+        };
+        charsImage.onerror = (e) => {
+          reject(e.error);
+        };
+        charsImage.src = 'data:image/png;base64,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';
+      });
+
+      gotCharsImage.then(charsImage => {
+        const editPane = document.getElementById('edit-pane');
+        const charSheetWidth = charsImage.naturalWidth;
+        editPane.width = charWidth * screenColumns;
+        editPane.height = charHeight * screenRows;
+        const ctx = editPane.getContext('2d');
+        ctx.fillStyle = '#000';
+        ctx.fillRect(0, 0, editPane.width, editPane.height);
+        const setCharCode = (x, y, ci) => {
+          const offset = ((y * screenColumns) + x) * 2 + 1;
+          rawData[offset] = ci;
+        };
+        const setColors = (x, y, fg, bg) => {
+          const offset = ((y * screenColumns) + x) * 2;
+          rawData[offset] = (fg << 4) | (bg & 0xf);
+        };
+        const drawAt = (x, y) => {
+          const offset = ((y * screenColumns) + x) * 2;
+          const charCode = rawData[offset + 1];
+          const fg = palette[rawData[offset] >> 4];
+          const bg = palette[rawData[offset] & 0xf];
+          ctx.fillStyle = bg;
+          ctx.globalCompositeOperation = 'source-over';
+          ctx.fillRect(x * charWidth, y * charHeight, charWidth, charHeight);
+          ctx.globalCompositeOperation = 'destination-out';
+          const srcX = (charCode * charWidth) % charSheetWidth;
+          const srcY = Math.floor((charCode * charWidth) / charSheetWidth) * charHeight;
+          ctx.drawImage(charsImage, srcX, srcY, charWidth, charHeight, x*charWidth, y*charHeight, charWidth, charHeight);
+          ctx.fillStyle = fg;
+          ctx.globalCompositeOperation = 'destination-over';
+          ctx.fillRect(x * charWidth, y * charHeight, charWidth, charHeight);
+        };
+        for (let y = 0; y < screenRows; y++) {
+          for (let x = 0; x < screenColumns; x++) {
+            setCharCode(x, y, Math.random() * 0xff);
+            setColors(x, y, Math.random() * 0xf, Math.random() * 0xf);
+            drawAt(x, y);
+          }
+        }
+      });
+
+    </script>
   </body>
 </html>
