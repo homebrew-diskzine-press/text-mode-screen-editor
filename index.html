@@ -11,6 +11,7 @@
       #edit-pane {
         image-rendering: crisp-edges;
         image-rendering: pixelated;
+        cursor: crosshair;
       }
       #open-file, #save-file {
         position: absolute;
@@ -200,6 +201,14 @@
           const offset = ((y * screenColumns) + x) * 2;
           rawData[offset] = (fg << 4) | (bg & 0xf);
         };
+        const setForegroundColor = (x, y, fg) => {
+          const offset = ((y * screenColumns) + x) * 2;
+          rawData[offset] = (fg << 4) | (rawData[offset] & 0xf);
+        };
+        const setBackgroundColor = (x, y, bg) => {
+          const offset = ((y * screenColumns) + x) * 2;
+          rawData[offset] = (rawData[offset] & 0xf0) | (bg & 0xf);
+        };
         const drawAt = (x, y) => {
           const offset = ((y * screenColumns) + x) * 2;
           const charCode = rawData[offset + 1];
@@ -233,6 +242,39 @@
         window.addEventListener('data-update', () => {
           drawAll();
         });
+        const mousePos = new rxjs.BehaviorSubject(null);
+        editPane.onpointermove = e => {
+          if (!e.isPrimary) return;
+          const rect = editPane.getBoundingClientRect();
+          const x = Math.floor((e.clientX - rect.left) / rect.width * screenColumns);
+          const y = Math.floor((e.clientY - rect.top) / rect.height * screenRows)
+          if (mousePos.value === null || mousePos.value[0] !== x || mousePos.value[1] !== y) {
+            mousePos.next([x, y]);
+          }
+        };
+        editPane.onpointerout = e => {
+          if (!e.isPrimary) return;
+          if (mousePos.value !== null) {
+            mousePos.next(null);
+          }
+        };
+        editPane.onpointerdown = e => {
+          if (!e.isPrimary) return;
+          const id = e.pointerId;
+          editPane.setPointerCapture(id);
+          const sub = mousePos.subscribe(pos => {
+            if (pos === null) return;
+            setColors(pos[0], pos[1], fgColor.value, bgColor.value);
+            drawAt(pos[0], pos[1]);
+          });
+          const onpointerup = e => {
+            if (e.pointerId !== id) return;
+            editPane.releasePointerCapture(id);
+            editPane.removeEventListener('pointerup', onpointerup);
+            sub.unsubscribe();
+          };
+          editPane.addEventListener('pointerup', onpointerup);
+        };
       });
 
     </script>
