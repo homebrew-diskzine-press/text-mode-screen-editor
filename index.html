@@ -37,6 +37,18 @@
       .bg-color.fg-color {
         box-shadow: var(--fg-border), var(--bg-border);
       }
+      #char-selector {
+        background: #000;
+        display: flex;
+        flex-flow: row wrap;
+      }
+      #char-selector * {
+        image-rendering: crisp-edges;
+        image-rendering: pixelated;
+      }
+      .pen-char {
+        opacity: 0.5;
+      }
     </style>
     <script src="https://unpkg.com/rxjs@6.6.3/bundles/rxjs.umd.min.js"></script>
   </head>
@@ -53,6 +65,8 @@
     </div>
     <div id="palette-selector">
     </div>
+    <div id="char-selector">
+    </div>
     <script>
 
       const palette = [
@@ -64,6 +78,7 @@
 
       const fgColor = new rxjs.BehaviorSubject(0xf);
       const bgColor = new rxjs.BehaviorSubject(0x0);
+      const penChar = new rxjs.BehaviorSubject(0x2);
 
       const paletteSelector = document.getElementById('palette-selector');
       for (let i = 0; i < palette.length; i++) {
@@ -159,6 +174,44 @@
           reject(e.error);
         };
         charsImage.src = 'data:image/png;base64,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';
+      });
+
+      const charSelector = document.getElementById('char-selector');
+
+      charSelector.onclick = e => {
+        if ('value' in e.target.dataset) {
+          penChar.next(+e.target.dataset.value);
+        }
+      };
+
+      gotCharsImage.then(charsImage => {
+        const tempCanvas = document.createElement('CANVAS');
+        tempCanvas.width = charWidth;
+        tempCanvas.height = charHeight;
+        const ctx = tempCanvas.getContext('2d');
+        for (let i = 0; i < 256; i++) {
+          ctx.globalCompositeOperation = 'copy';
+          ctx.fillStyle = '#000';
+          ctx.fillRect(0, 0, charWidth, charHeight);
+          ctx.globalCompositeOperation = 'destination-out';
+          const srcX = (i * charWidth) % charsImage.naturalWidth;
+          const srcY = Math.floor((i * charWidth) / charsImage.naturalWidth) * charHeight;
+          ctx.drawImage(charsImage, srcX, srcY, charWidth, charHeight, 0, 0, charWidth, charHeight);
+          ctx.fillStyle = palette[9 + Math.floor((Math.random() * 7))];
+          ctx.globalCompositeOperation = 'destination-over';
+          ctx.fillStyle = '#fff';
+          ctx.fillRect(0, 0, charWidth, charHeight);
+          const img = new Image(charWidth, charHeight);
+          img.src = tempCanvas.toDataURL();
+          img.dataset.value = i;
+          charSelector.appendChild(img);
+        }
+        penChar.subscribe(i => {
+          const selected = charSelector.querySelector('.pen-char');
+          if (selected) selected.classList.remove('pen-char');
+          const newSelection = charSelector.querySelector('[data-value="'+i+'"]');
+          if (newSelection) newSelection.classList.add('pen-char');
+        });
       });
 
       gotCharsImage.then(charsImage => {
@@ -265,6 +318,7 @@
           const sub = mousePos.subscribe(pos => {
             if (pos === null) return;
             setColors(pos[0], pos[1], fgColor.value, bgColor.value);
+            setCharCode(pos[0], pos[1], penChar.value);
             drawAt(pos[0], pos[1]);
           });
           const onpointerup = e => {
