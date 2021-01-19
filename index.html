@@ -161,6 +161,29 @@
       });
 
       gotCharsImage.then(charsImage => {
+        const favicon = document.createElement('CANVAS');
+        favicon.width = 16;
+        favicon.height = 16;
+        const ctx = favicon.getContext('2d');
+        ctx.fillStyle = palette[0];
+        ctx.fillRect(0, 0, 16, 16);
+        ctx.globalCompositeOperation = 'destination-out';
+        const faviconChars = [2, 3, 0xe, 0xf, 0x15];
+        const faviconChar = faviconChars[Math.floor(Math.random() * faviconChars.length)];
+        const srcX = (faviconChar * charWidth) % charsImage.naturalWidth;
+        const srcY = Math.floor((faviconChar * charWidth) / charsImage.naturalWidth) * charHeight;
+        ctx.drawImage(charsImage, srcX, srcY, charWidth, charHeight, Math.floor((16 - charWidth) / 2), Math.floor((16 - charHeight) / 2), charWidth, charHeight);
+        ctx.fillStyle = palette[9 + Math.floor((Math.random() * 7))];
+        ctx.globalCompositeOperation = 'destination-over';
+        ctx.fillRect(0, 0, 16, 16);
+        const link = document.createElement('LINK');
+        link.rel = 'icon';
+        link.type = 'image/png';
+        link.href = favicon.toDataURL();
+        document.head.appendChild(link);
+      });
+
+      gotCharsImage.then(charsImage => {
         const editPane = document.getElementById('edit-pane');
         const charSheetWidth = charsImage.naturalWidth;
         editPane.width = charWidth * screenColumns;
