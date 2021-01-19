@@ -4,11 +4,35 @@
     <meta charset="utf-8">
     <title>Text Mode Screen Editor</title>
     <style>
+      :root {
+        --fg-border: 3px 3px 0px black inset, -3px -3px 0px black inset, 0 0 10px white inset;
+        --bg-border: 6px 6px 0px white inset, -6px -6px 0px white inset, 0 0 10px black inset;
+      }
       #open-file, #save-file {
         position: absolute;
         left: -1000px;
       }
+      #palette-selector {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr;
+        grid-template-rows: 1fr 1fr;
+        height: 128px;
+        border: 3px ridge;
+      }
+      .color {
+        position: relative;
+      }
+      .fg-color {
+        box-shadow: var(--fg-border);
+      }
+      .bg-color {
+        box-shadow: var(--bg-border);
+      }
+      .bg-color.fg-color {
+        box-shadow: var(--fg-border), var(--bg-border);
+      }
     </style>
+    <script src="https://unpkg.com/rxjs@6.6.3/bundles/rxjs.umd.min.js"></script>
   </head>
   <body>
     <h1>Text Mode Screen Editor</h1>
@@ -18,7 +42,11 @@
       <input type="file" id="open-file" accept=".dat">
       <a href="#" id="save-file" download="text-mode-screen.dat"></a>
     </div>
-    <canvas id="edit-pane"></canvas>
+    <div>
+      <canvas id="edit-pane"></canvas>
+    </div>
+    <div id="palette-selector">
+    </div>
     <script>
 
       const palette = [
@@ -27,6 +55,51 @@
         '#555', '#55f', '#5f5', '#5ff',
         '#f55', '#f5f', '#ff5', '#fff',
       ];
+
+      const fgColor = new rxjs.BehaviorSubject(0xf);
+      const bgColor = new rxjs.BehaviorSubject(0x0);
+
+      const paletteSelector = document.getElementById('palette-selector');
+      for (let i = 0; i < palette.length; i++) {
+        const colorSelector = document.createElement('DIV');
+        colorSelector.className = 'color';
+        colorSelector.value = i;
+        colorSelector.dataset.value = i;
+        colorSelector.style.backgroundColor = palette[i];
+        paletteSelector.appendChild(colorSelector);
+      }
+      fgColor.subscribe(fgi => {
+        const currentFg = paletteSelector.querySelector('.fg-color');
+        if (currentFg) currentFg.classList.remove('fg-color');
+        const newFg = paletteSelector.querySelector('[data-value="'+fgi+'"]');
+        if (newFg) newFg.classList.add('fg-color');
+      });
+      bgColor.subscribe(bgi => {
+        const currentBg = paletteSelector.querySelector('.bg-color');
+        if (currentBg) currentBg.classList.remove('bg-color');
+        const newBg = paletteSelector.querySelector('[data-value="'+bgi+'"]');
+        if (newBg) newBg.classList.add('bg-color');
+      });
+      paletteSelector.onclick = e => {
+        if (typeof e.target.value === 'number') {
+          if (e.ctrlKey) {
+            bgColor.next(e.target.value);
+          }
+          else {
+            fgColor.next(e.target.value);
+          }
+        }
+      };
+      paletteSelector.oncontextmenu = e => {
+        e.preventDefault();
+      };
+      paletteSelector.onauxclick = e => {
+        if (typeof e.target.value === 'number') {
+          if (e.button === 2) {
+            bgColor.next(e.target.value);
+          }
+        }
+      };
 
       const charWidth = 8;
       const charHeight = 16;
@@ -87,6 +160,7 @@
         const charSheetWidth = charsImage.naturalWidth;
         editPane.width = charWidth * screenColumns;
         editPane.height = charHeight * screenRows;
+        paletteSelector.style.width = editPane.width + 'px';
         const ctx = editPane.getContext('2d');
         ctx.fillStyle = '#000';
         ctx.fillRect(0, 0, editPane.width, editPane.height);
