@@ -129,9 +129,6 @@
       let screenRows = 25;
 
       const rawData = new Uint8Array(screenColumns * screenRows * 2);
-      for (let o = 0; o <= rawData.length; o += 2) {
-        rawData[o] = 0xf;
-      }
 
       const saveFileLink = document.getElementById('save-file');
       const openFileInput = document.getElementById('open-file');
@@ -247,26 +244,26 @@
         ctx.fillStyle = '#000';
         ctx.fillRect(0, 0, editPane.width, editPane.height);
         const setCharCode = (x, y, ci) => {
-          const offset = ((y * screenColumns) + x) * 2 + 1;
+          const offset = ((y * screenColumns) + x) * 2;
           rawData[offset] = ci;
         };
         const setColors = (x, y, fg, bg) => {
-          const offset = ((y * screenColumns) + x) * 2;
-          rawData[offset] = (fg << 4) | (bg & 0xf);
+          const offset = ((y * screenColumns) + x) * 2 + 1;
+          rawData[offset] = (bg << 4) | (fg & 0xf);
         };
         const setForegroundColor = (x, y, fg) => {
-          const offset = ((y * screenColumns) + x) * 2;
-          rawData[offset] = (fg << 4) | (rawData[offset] & 0xf);
+          const offset = ((y * screenColumns) + x) * 2 + 1;
+          rawData[offset] = (rawData[offset] & 0xf0) | (fg & 0xf);
         };
         const setBackgroundColor = (x, y, bg) => {
-          const offset = ((y * screenColumns) + x) * 2;
-          rawData[offset] = (rawData[offset] & 0xf0) | (bg & 0xf);
+          const offset = ((y * screenColumns) + x) * 2 + 1;
+          rawData[offset] = (bg << 4) | (rawData[offset] & 0xf);
         };
         const drawAt = (x, y) => {
           const offset = ((y * screenColumns) + x) * 2;
-          const charCode = rawData[offset + 1];
-          const fg = palette[rawData[offset] >> 4];
-          const bg = palette[rawData[offset] & 0xf];
+          const charCode = rawData[offset];
+          const fg = palette[rawData[offset + 1] & 0xf];
+          const bg = palette[rawData[offset + 1] >>> 4];
           ctx.fillStyle = bg;
           ctx.globalCompositeOperation = 'source-over';
           ctx.fillRect(x * charWidth, y * charHeight, charWidth, charHeight);
