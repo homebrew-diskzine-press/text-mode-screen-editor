@@ -287,8 +287,9 @@
         };
         for (let y = 0; y < screenRows; y++) {
           for (let x = 0; x < screenColumns; x++) {
-            setCharCode(x, y, Math.random() * 0xff);
-            setColors(x, y, Math.random() * 0xf, Math.random() * 0xf);
+            //setCharCode(x, y, Math.random() * 0xff);
+            //setColors(x, y, Math.random() * 0xf, Math.random() * 0xf);
+            setColors(x, y, fgColor.value, bgColor.value);
             drawAt(x, y);
           }
         }
